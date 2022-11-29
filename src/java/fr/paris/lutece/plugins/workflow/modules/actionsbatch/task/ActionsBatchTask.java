@@ -75,7 +75,7 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
     {
         // Get resource id as parent ID for processiing child actions
         final ResourceHistory resourceHistory = _resourceHistoryService.findByPrimaryKey( nIdResourceHistory );
-        int parentId = resourceHistory.getId( );
+        int parentId = resourceHistory.getIdResource( );
 
         // get config
         ActionsBatchTaskConfig config = _taskConfigService.findByPrimaryKey( getId( ) );
@@ -84,7 +84,7 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
         {
 
             // get resource Ids
-            List<Integer> listResourceIds = _workflowService.getResourceIdListByIdState( config.getIdState( ), config.getResourceType( ) );
+            List<Integer> listResourceIds = _workflowService.getResourceIdListByIdState( config.getIdState( ), config.getResourceType( ), parentId );
 
             // get user
             User adminUser = AdminAuthenticationService.getInstance( ).getRegisteredUser( request );
@@ -92,8 +92,14 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
             // get progress bar feed token and init feed
             // (the progress feed must be registered upstream with ProgressManagerService.register( ...) 
             // and set in the session to be used from the initial context in a template)
-            String strFeedToken = (String) request.getSession( ).getAttribute ( getFeedToken( ) );
-            _progressManagerService.initFeed( strFeedToken, listResourceIds.size( ) );
+            String strFeedToken = null;
+            String strFeedTokenAttributeName = getFeedTokenAttributeName( );
+            if ( request.getAttribute ( strFeedTokenAttributeName ) != null )
+            {
+            	strFeedToken = (String) request.getSession( ).getAttribute ( getFeedTokenAttributeName( ) );
+            	_progressManagerService.initFeed( strFeedToken, listResourceIds.size( ) );
+            }
+            
 
             if ( CollectionUtils.isNotEmpty( listResourceIds ) )
             {
@@ -119,7 +125,7 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
      * get the feed token
      * @return the token
      */
-    private String getFeedToken( )
+    private String getFeedTokenAttributeName( )
     {
             return new StringBuilder( "FEED-")
             		.append( getAction( ).getResourceTypeCode( ) ).append( "-" )
