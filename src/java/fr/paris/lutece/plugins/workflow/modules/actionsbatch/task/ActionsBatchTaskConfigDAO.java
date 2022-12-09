@@ -67,8 +67,8 @@ public class ActionsBatchTaskConfigDAO implements ITaskConfigDAO<ActionsBatchTas
             daoUtil.setInt( 1, config.getIdWorkflow( ) );
             daoUtil.setInt( 2, config.getIdState( ) );
             daoUtil.setInt( 3, config.getIdAction( ) );
-            daoUtil.setInt( 4, config.getIdTask( ) );
-            daoUtil.setString( 5, config.getResourceType( ) );
+            daoUtil.setString( 4, config.getResourceType( ) );
+            daoUtil.setInt( 5, config.getIdTask( ) );
             daoUtil.executeUpdate( );
         }
     }

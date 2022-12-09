@@ -47,16 +47,14 @@ import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceHistoryService;
 import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceHistoryService;
-import fr.paris.lutece.portal.service.admin.AdminAuthenticationService;
+import fr.paris.lutece.plugins.workflowcore.service.task.AsynchronousSimpleTask;
 import fr.paris.lutece.portal.service.i18n.I18nService;
-import fr.paris.lutece.portal.service.progressmanager.ProgressManagerService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
 
 
 public class ActionsBatchTask extends AsynchronousSimpleTask
 {
-    private static final String PARAMETER_USER_ID = "userId";
 
     // Constants
     private static final String TASK_TITLE = "module.workflow.actionsbatch.title";
@@ -65,15 +63,12 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
     private static final IResourceHistoryService _resourceHistoryService = SpringContextService.getBean( ResourceHistoryService.BEAN_SERVICE );
     private static final ITaskConfigService _taskConfigService = SpringContextService.getBean( "workflow-actionsbatch.actionsBatchTaskConfigService" );
     private static final WorkflowService _workflowService = WorkflowService.getInstance( );
-    private static final ProgressManagerService _progressManagerService = ProgressManagerService.getInstance( );
 
-    // params
-    private static final String PARAMETER_FEED_TOKEN = "FEED_TOKEN";
 
     @Override
-    public void processAsynchronousTask( int nIdResourceHistory, HttpServletRequest request, Locale locale )
+    public void processAsynchronousTask( int nIdResourceHistory, HttpServletRequest request, Locale locale, User user )
     {
-        // Get resource id as parent ID for processiing child actions
+        // Get resource id as parent ID for processing child actions
         final ResourceHistory resourceHistory = _resourceHistoryService.findByPrimaryKey( nIdResourceHistory );
         int parentId = resourceHistory.getIdResource( );
 
@@ -86,30 +81,10 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
             // get resource Ids
             List<Integer> listResourceIds = _workflowService.getResourceIdListByIdState( config.getIdState( ), config.getResourceType( ), parentId );
 
-            // get user
-            User adminUser = AdminAuthenticationService.getInstance( ).getRegisteredUser( request );
-
-            // get progress bar feed token and init feed
-            // (the progress feed must be registered upstream with ProgressManagerService.register( ...) 
-            // and set in the session to be used from the initial context in a template)
-            String strFeedToken = null;
-            String strFeedTokenAttributeName = getFeedTokenAttributeName( );
-            if ( request.getAttribute ( strFeedTokenAttributeName ) != null )
-            {
-            	strFeedToken = (String) request.getSession( ).getAttribute ( getFeedTokenAttributeName( ) );
-            	_progressManagerService.initFeed( strFeedToken, listResourceIds.size( ) );
-            }
-            
-
             if ( CollectionUtils.isNotEmpty( listResourceIds ) )
             {
                 ActionsBatchService.doProcessMassActions( request, config.getResourceType( ), config.getIdAction( ), resourceHistory.getIdResource( ), locale,
-                        adminUser, listResourceIds, true, strFeedToken );
-            }
-            else
-            {
-                // unregister
-                _progressManagerService.unRegisterFeed( strFeedToken );
+                        user, listResourceIds, true );
             }
         }
 
@@ -121,17 +96,4 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
         return I18nService.getLocalizedString( TASK_TITLE, pLocale );
     }
 
-    /**
-     * get the feed token
-     * @return the token
-     */
-    private String getFeedTokenAttributeName( )
-    {
-            return new StringBuilder( "FEED-")
-            		.append( getAction( ).getResourceTypeCode( ) ).append( "-" )
-            		.append( getAction( ).getResourceId( ) ).append( "-" )
-            		.append( getAction( ).getWorkflow( ).getId( ) ).append( "-" )
-            		.append( getAction( ).getId( ) )
-                    .toString( );
-    }
 }

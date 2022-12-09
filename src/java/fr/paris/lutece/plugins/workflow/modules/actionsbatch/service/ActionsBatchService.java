@@ -42,6 +42,7 @@ import fr.paris.lutece.api.user.User;
 import fr.paris.lutece.portal.business.progressmanager.ProgressFeed;
 import fr.paris.lutece.portal.service.progressmanager.ProgressManagerService;
 import fr.paris.lutece.portal.service.util.AppException;
+import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
 
 public class ActionsBatchService
@@ -60,22 +61,14 @@ public class ActionsBatchService
      * @param bIsAutomatic
      * @param strToken
      * 
-     * @return the feedtoken
+     * 
      */
-    public static String doProcessMassActions( HttpServletRequest request, String strResourceType, int nIdAction, int nParentResourceId, Locale locale,
-            User user, List<Integer> listResourceIds, boolean bIsAutomatic, String strFeedToken )
+    public static void doProcessMassActions( HttpServletRequest request, String strResourceType, int nIdAction, int nParentResourceId, Locale locale,
+            User user, List<Integer> listResourceIds, boolean bIsAutomatic )
     {
         if ( listResourceIds.isEmpty( ) )
         {
-            return null;
-        }
-
-        ProgressManagerService progressManagerService = ProgressManagerService.getInstance( );
-
-        final ProgressFeed feed = progressManagerService.getProgressFeeds( ).get( strFeedToken );
-        if ( null != feed && feed.getNbItemTotal( ) < listResourceIds.size( ) )
-        {
-            progressManagerService.initFeed( strFeedToken, listResourceIds.size( ) );
+            return ;
         }
 
         Runnable task = ( ) -> {
@@ -84,24 +77,18 @@ public class ActionsBatchService
                 try
                 {
                     WorkflowService.getInstance( ).doProcessAction( nIdResource, strResourceType, nIdAction, nParentResourceId, request, locale, bIsAutomatic,
-                            user );
-                    progressManagerService.incrementSuccess( strFeedToken, 1 );
+                            user );                    
                 }
                 catch( AppException e )
                 {
-                    progressManagerService.incrementFailure( strFeedToken, 1 );
-                    progressManagerService.addReport( strFeedToken, "[" + nIdResource + "] " + e.getMessage( ) );
+                    AppLogService.error( "An error occured when processing action " + nIdAction 
+                    		+ " on resource Id : " + nIdResource );
                 }
             }
-            
-            // unregister after processing all actions
-            progressManagerService.unRegisterFeed( strFeedToken );
         };
         
         Thread thread = new Thread( task );
         thread.start( );
-
-        return strFeedToken;
     }
 
 }
