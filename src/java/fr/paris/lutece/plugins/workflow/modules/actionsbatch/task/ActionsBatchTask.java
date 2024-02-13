@@ -43,10 +43,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import fr.paris.lutece.api.user.User;
 import fr.paris.lutece.plugins.workflow.modules.actionsbatch.service.ActionsBatchService;
-import fr.paris.lutece.plugins.workflowcore.business.resource.ResourceHistory;
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
-import fr.paris.lutece.plugins.workflowcore.service.resource.IResourceHistoryService;
-import fr.paris.lutece.plugins.workflowcore.service.resource.ResourceHistoryService;
 import fr.paris.lutece.plugins.workflowcore.service.task.AsynchronousSimpleTask;
 import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
@@ -60,18 +57,13 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
     private static final String TASK_TITLE = "module.workflow.actionsbatch.title";
 
     // Services
-    private static final IResourceHistoryService _resourceHistoryService = SpringContextService.getBean( ResourceHistoryService.BEAN_SERVICE );
     private static final ITaskConfigService _taskConfigService = SpringContextService.getBean( "workflow-actionsbatch.actionsBatchTaskConfigService" );
     private static final WorkflowService _workflowService = WorkflowService.getInstance( );
 
 
     @Override
-    public void processAsynchronousTask( int nIdResourceHistory, HttpServletRequest request, Locale locale, User user )
+    public void processAsynchronousTask( int parentId, String strResourceType, int nIdResourceHistory, HttpServletRequest request, Locale locale, User user )
     {
-        // Get resource id as parent ID for processing child actions
-        final ResourceHistory resourceHistory = _resourceHistoryService.findByPrimaryKey( nIdResourceHistory );
-        int parentId = resourceHistory.getIdResource( );
-
         // get config
         ActionsBatchTaskConfig config = _taskConfigService.findByPrimaryKey( getId( ) );
 
@@ -83,7 +75,7 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
 
             if ( CollectionUtils.isNotEmpty( listResourceIds ) )
             {
-                ActionsBatchService.doProcessMassActions( request, config.getResourceType( ), config.getIdAction( ), resourceHistory.getIdResource( ), locale,
+                ActionsBatchService.doProcessMassActions( request, config.getResourceType( ), config.getIdAction( ), parentId, locale,
                         user, listResourceIds, true );
             }
         }
@@ -95,5 +87,6 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
     {
         return I18nService.getLocalizedString( TASK_TITLE, pLocale );
     }
+
 
 }
