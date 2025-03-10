@@ -43,10 +43,12 @@ import fr.paris.lutece.portal.business.progressmanager.ProgressFeed;
 import fr.paris.lutece.portal.service.progressmanager.ProgressManagerService;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
 
 public class ActionsBatchService
 {
+    private static final int BATCH_PAUSE = AppPropertiesService.getPropertyInt("workflow-actionsbatch.pause.ms", -1);
 
     /**
      * Process actions in batch mode
@@ -77,7 +79,18 @@ public class ActionsBatchService
                 try
                 {
                     WorkflowService.getInstance( ).doProcessAction( nIdResource, strResourceType, nIdAction, nParentResourceId, request, locale, bIsAutomatic,
-                            user );                    
+                            user );
+                    if(BATCH_PAUSE > 0)
+                    {
+                        try
+                        {
+                            Thread.sleep(BATCH_PAUSE);
+                            AppLogService.info("Pause time between each action in MS");
+                        } catch (InterruptedException e)
+                        {
+                            AppLogService.error("An error occured while sleeping", e);
+                        }
+                    }
                 }
                 catch( AppException e )
                 {
