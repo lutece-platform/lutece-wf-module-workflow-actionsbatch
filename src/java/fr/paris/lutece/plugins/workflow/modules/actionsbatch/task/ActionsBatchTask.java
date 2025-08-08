@@ -47,6 +47,7 @@ import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
 import fr.paris.lutece.plugins.workflowcore.service.task.AsynchronousSimpleTask;
 import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
 
 
@@ -69,9 +70,19 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
 
         if ( config != null && config.getIdAction( ) > 0 && config.getIdState( ) > 0 && !StringUtils.isBlank( config.getResourceType( ) ) )
         {
-
+        	
+        	boolean filterWithExternalParentId  = AppPropertiesService.getPropertyBoolean( "actionsbatch.filterWithExternalParentId", false );
+        	
             // get resource Ids
-            List<Integer> listResourceIds = _workflowService.getResourceIdListByIdState( config.getIdState( ), config.getResourceType( ), parentId );
+            List<Integer> listResourceIds ; 
+            if ( filterWithExternalParentId )
+           	{
+            	listResourceIds = _workflowService.getResourceIdListByIdState( config.getIdState( ), config.getResourceType( ), parentId ) ; 
+           	}
+            else
+            {
+            	listResourceIds = _workflowService.getResourceIdListByIdState( config.getIdState( ), config.getResourceType( ) ) ; 
+            }
 
             if ( CollectionUtils.isNotEmpty( listResourceIds ) )
             {
