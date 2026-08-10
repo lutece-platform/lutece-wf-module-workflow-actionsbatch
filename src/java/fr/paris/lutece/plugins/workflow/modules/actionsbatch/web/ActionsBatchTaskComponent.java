@@ -41,8 +41,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.ConstraintViolation;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,19 +52,21 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import fr.paris.lutece.api.user.User;
+import fr.paris.lutece.plugins.workflow.modules.actionsbatch.service.ActionsBatchTaskConfigService;
 import fr.paris.lutece.plugins.workflow.modules.actionsbatch.task.ActionsBatchTaskConfig;
 import fr.paris.lutece.plugins.workflow.web.task.NoFormTaskComponent;
 import fr.paris.lutece.plugins.workflowcore.business.action.Action;
 import fr.paris.lutece.plugins.workflowcore.business.action.ActionFilter;
 import fr.paris.lutece.plugins.workflowcore.business.config.ITaskConfig;
 import fr.paris.lutece.plugins.workflowcore.business.state.State;
+import fr.paris.lutece.plugins.workflowcore.business.task.ITaskType;
 import fr.paris.lutece.plugins.workflowcore.service.action.ActionService;
 import fr.paris.lutece.plugins.workflowcore.service.action.IActionService;
+import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
 import fr.paris.lutece.plugins.workflowcore.service.task.ITask;
 import fr.paris.lutece.portal.service.admin.AdminUserService;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
-import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.template.AppTemplateService;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
@@ -73,13 +75,18 @@ import fr.paris.lutece.util.ReferenceItem;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.beanvalidation.BeanValidationUtil;
 import fr.paris.lutece.util.html.HtmlTemplate;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * ActionsBatchTaskComponent Class
- * 
+ *
  * @author MDP,ACN
  *
  */
+@ApplicationScoped
+@Named( "workflow-actionsbatch.actionsBatchTaskComponent" )
 public class ActionsBatchTaskComponent extends NoFormTaskComponent
 {
     // MARKERS
@@ -101,6 +108,29 @@ public class ActionsBatchTaskComponent extends NoFormTaskComponent
     private static final String MARK_STATE_ID = "state_id";
     private static final String MARK_ACTION_ID = "action_id";
 
+    @Inject
+    @Named( ActionService.BEAN_SERVICE )
+    private IActionService _actionService;
+
+    @Inject
+    private WorkflowService _workflowService;
+
+    /**
+     * Builds the component with the task type and the configuration service of the actions batch task.
+     *
+     * @param taskType
+     *            the task type of the actions batch task
+     * @param taskConfigService
+     *            the configuration service of the actions batch task
+     */
+    @Inject
+    public ActionsBatchTaskComponent( @Named( "workflow-actionsbatch.actionsBatchTaskType" ) ITaskType taskType,
+            @Named( ActionsBatchTaskConfigService.BEAN_SERVICE ) ITaskConfigService taskConfigService )
+    {
+        setTaskType( taskType );
+        setTaskConfigService( taskConfigService );
+    }
+
     @Override
     public String getDisplayConfigForm( HttpServletRequest request, Locale locale, ITask task )
     {
@@ -110,9 +140,6 @@ public class ActionsBatchTaskComponent extends NoFormTaskComponent
             throw new AppException( "Access Denied" );
         }
 
-        // service
-        IActionService _actionService = SpringContextService.getBean( ActionService.BEAN_SERVICE );
-
         // model
         final Map<String, Object> model = new HashMap<>( );
 
@@ -120,7 +147,7 @@ public class ActionsBatchTaskComponent extends NoFormTaskComponent
         final ActionsBatchTaskConfig config = findTaskConfig( task.getId( ) );
 
         // get enabled workflow list
-        final ReferenceList workflowsRefList = WorkflowService.getInstance( ).getWorkflowsEnabled( user, locale );
+        final ReferenceList workflowsRefList = _workflowService.getWorkflowsEnabled( user, locale );
 
         // remove first blank item
         workflowsRefList.remove( 0 );
@@ -132,7 +159,7 @@ public class ActionsBatchTaskComponent extends NoFormTaskComponent
         for ( ReferenceItem workflowItem : workflowsRefList )
         {
             // STATES
-            Collection<State> workflowStates = WorkflowService.getInstance( ).getAllStateByWorkflow( Integer.valueOf( workflowItem.getCode( ) ), user );
+            Collection<State> workflowStates = _workflowService.getAllStateByWorkflow( Integer.valueOf( workflowItem.getCode( ) ), user );
 
             // put in global map
             mapStates.put( workflowItem.getCode( ), workflowStates );

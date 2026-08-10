@@ -33,10 +33,14 @@
  */
 package fr.paris.lutece.plugins.workflow.modules.actionsbatch.task;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import fr.paris.lutece.plugins.workflowcore.business.config.TaskConfig;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 
+@Dependent
+@Named( "workflow-actionsbatch.actionsBatchTaskConfig" )
 public class ActionsBatchTaskConfig extends TaskConfig
 {
     // Variables declarations

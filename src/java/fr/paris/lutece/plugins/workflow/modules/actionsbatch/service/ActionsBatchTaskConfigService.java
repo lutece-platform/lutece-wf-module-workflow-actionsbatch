@@ -33,13 +33,32 @@
  */
 package fr.paris.lutece.plugins.workflow.modules.actionsbatch.service;
 
+import fr.paris.lutece.plugins.workflow.modules.actionsbatch.task.ActionsBatchTaskConfig;
+import fr.paris.lutece.plugins.workflowcore.business.config.ITaskConfigDAO;
 import fr.paris.lutece.plugins.workflowcore.service.config.TaskConfigService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * ActionsBatchTaskConfigService Class
  *
  */
+@ApplicationScoped
+@Named( ActionsBatchTaskConfigService.BEAN_SERVICE )
 public class ActionsBatchTaskConfigService extends TaskConfigService
 {
+    public static final String BEAN_SERVICE = "workflow-actionsbatch.actionsBatchTaskConfigService";
 
+    /**
+     * Builds the service with the configuration DAO of the actions batch task.
+     *
+     * @param taskConfigDAO
+     *            the configuration DAO of the actions batch task
+     */
+    @Inject
+    public ActionsBatchTaskConfigService( @Named( "workflow-actionsbatch.actionsBatchTaskConfigDAO" ) ITaskConfigDAO<ActionsBatchTaskConfig> taskConfigDAO )
+    {
+        setTaskConfigDAO( (ITaskConfigDAO) taskConfigDAO );
+    }
 }

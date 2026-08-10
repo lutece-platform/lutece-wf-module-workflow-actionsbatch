@@ -36,23 +36,29 @@ package fr.paris.lutece.plugins.workflow.modules.actionsbatch.service;
 import java.util.List;
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import fr.paris.lutece.api.user.User;
-import fr.paris.lutece.portal.business.progressmanager.ProgressFeed;
-import fr.paris.lutece.portal.service.progressmanager.ProgressManagerService;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
 
+@ApplicationScoped
 public class ActionsBatchService
 {
-    private static final int BATCH_PAUSE = AppPropertiesService.getPropertyInt("workflow-actionsbatch.pause.ms", -1);
+    @Inject
+    private WorkflowService _workflowService;
+
+    @Inject
+    @ConfigProperty( name = "workflow-actionsbatch.pause.ms", defaultValue = "-1" )
+    private int _nBatchPause;
 
     /**
      * Process actions in batch mode
-     * 
+     *
      * @param request
      * @param strResourceType
      * @param nIdAction
@@ -61,11 +67,10 @@ public class ActionsBatchService
      * @param user
      * @param listResourceIds
      * @param bIsAutomatic
-     * @param strToken
-     * 
-     * 
+     *
+     *
      */
-    public static void doProcessMassActions( HttpServletRequest request, String strResourceType, int nIdAction, int nParentResourceId, Locale locale,
+    public void doProcessMassActions( HttpServletRequest request, String strResourceType, int nIdAction, int nParentResourceId, Locale locale,
             User user, List<Integer> listResourceIds, boolean bIsAutomatic )
     {
         if ( listResourceIds.isEmpty( ) )
@@ -78,24 +83,25 @@ public class ActionsBatchService
             {
                 try
                 {
-                    WorkflowService.getInstance( ).doProcessAction( nIdResource, strResourceType, nIdAction, nParentResourceId, request, locale, bIsAutomatic,
+                    _workflowService.doProcessAction( nIdResource, strResourceType, nIdAction, nParentResourceId, request, locale, bIsAutomatic,
                             user );
-                    if(BATCH_PAUSE > 0)
+                    if ( _nBatchPause > 0 )
                     {
                         try
                         {
-                            Thread.sleep(BATCH_PAUSE);
-                            AppLogService.info("Pause time between each action in MS");
-                        } catch (InterruptedException e)
+                            Thread.sleep( _nBatchPause );
+                            AppLogService.info( "Pause time between each action in MS" );
+                        }
+                        catch( InterruptedException e )
                         {
-                            AppLogService.error("An error occured while sleeping", e);
+                            Thread.currentThread( ).interrupt( );
+                            AppLogService.error( "An error occured while sleeping", e );
                         }
                     }
                 }
                 catch( AppException e )
                 {
-                    AppLogService.error( "An error occured when processing action " + nIdAction 
-                    		+ " on resource Id : " + nIdResource );
+                    AppLogService.error( "An error occured when processing action {} on resource Id : {}", nIdAction, nIdResource );
                 }
             }
         };
