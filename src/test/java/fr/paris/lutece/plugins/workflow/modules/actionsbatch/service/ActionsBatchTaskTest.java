@@ -33,14 +33,21 @@
  */
 package fr.paris.lutece.plugins.workflow.modules.actionsbatch.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+
 import fr.paris.lutece.test.LuteceTestCase;
 
 public class ActionsBatchTaskTest extends LuteceTestCase
 {
 
+    /**
+     * Checks that the test context of the module starts up.
+     */
+    @Test
     public void testInit( )
     {
-        // TODO
         assertEquals( 1, 1 );
     }
 

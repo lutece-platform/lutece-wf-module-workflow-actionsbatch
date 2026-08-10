@@ -36,7 +36,7 @@ package fr.paris.lutece.plugins.workflow.modules.actionsbatch.task;
 import java.util.List;
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -46,11 +46,15 @@ import fr.paris.lutece.plugins.workflow.modules.actionsbatch.service.ActionsBatc
 import fr.paris.lutece.plugins.workflowcore.service.config.ITaskConfigService;
 import fr.paris.lutece.plugins.workflowcore.service.task.AsynchronousSimpleTask;
 import fr.paris.lutece.portal.service.i18n.I18nService;
-import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.service.workflow.WorkflowService;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 
+@Dependent
+@Named( "workflow-actionsbatch.actionsBatchTask" )
 public class ActionsBatchTask extends AsynchronousSimpleTask
 {
 
@@ -58,8 +62,15 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
     private static final String TASK_TITLE = "module.workflow.actionsbatch.title";
 
     // Services
-    private static final ITaskConfigService _taskConfigService = SpringContextService.getBean( "workflow-actionsbatch.actionsBatchTaskConfigService" );
-    private static final WorkflowService _workflowService = WorkflowService.getInstance( );
+    @Inject
+    @Named( "workflow-actionsbatch.actionsBatchTaskConfigService" )
+    private ITaskConfigService _taskConfigService;
+
+    @Inject
+    private WorkflowService _workflowService;
+
+    @Inject
+    private ActionsBatchService _actionsBatchService;
 
 
     @Override
@@ -86,7 +97,7 @@ public class ActionsBatchTask extends AsynchronousSimpleTask
 
             if ( CollectionUtils.isNotEmpty( listResourceIds ) )
             {
-                ActionsBatchService.doProcessMassActions( request, config.getResourceType( ), config.getIdAction( ), parentId, locale,
+                _actionsBatchService.doProcessMassActions( request, config.getResourceType( ), config.getIdAction( ), parentId, locale,
                         user, listResourceIds, true );
             }
         }

@@ -24,57 +24,83 @@
 
 <script type="text/javascript">
 
+( function( ) {
 
-$(function() {
+    const json = ${json_workflow_actions!'{}'};
 
-  $('#workflow').change( function( ) {
-      for (var key in json.workflows) {
-      	if (json.workflows[key].id == $(this).val() ) {
-          	fillSelect( $('#state'), json.workflows[key].states );
+    function init( ) {
+        const workflowSelect = document.getElementById( 'workflow' );
+        const stateSelect = document.getElementById( 'state' );
+        const actionSelect = document.getElementById( 'action' );
+
+        if ( workflowSelect === null || stateSelect === null || actionSelect === null ) {
+            return;
         }
-      }
-      $('#state').change();
-  });
 
-  $('#state').change( function( ) {
-      for (var key in json.workflows) {
-      	   if (json.workflows[key].id == $('#workflow').val() ) {
-              for (var skey in json.workflows[key].states) {
-                if (json.workflows[key].states[skey].id ==  $(this).val() ) {
-                  fillSelect( $('#action'), json.workflows[key].states[skey].actions);
+        function fillSelect( select, items ) {
+            select.replaceChildren( );
+            for ( const key in items ) {
+                select.add( new Option( items[ key ].name, items[ key ].id ) );
+            }
+        }
+
+        function selectIfPresent( select, value ) {
+            for ( const option of select.options ) {
+                if ( option.value === value ) {
+                    select.value = value;
+                    return;
                 }
-              }
-          }
-      }       
-  });
-  
-  
-  // init
-  fillSelect( $('#workflow'), json.workflows );
-  $('#workflow').change();
-  
-  // init current values (if exists)
-  $('#workflow option[value=${workflow_id}]').attr('selected','selected').change();
-  $('#state option[value=${state_id}]').attr('selected','selected').change();
-  $('#action option[value=${action_id}]').attr('selected','selected');
+            }
+        }
 
-});
+        function findWorkflow( id ) {
+            for ( const key in json.workflows ) {
+                if ( String( json.workflows[ key ].id ) === String( id ) ) {
+                    return json.workflows[ key ];
+                }
+            }
+            return null;
+        }
 
-function addSelectOption( select, value, text) {
-	select.append($('<option>', {
-	    value: value,
-	    text: text
-	   }));
-}
+        function findState( workflow, id ) {
+            if ( workflow === null ) {
+                return null;
+            }
+            for ( const key in workflow.states ) {
+                if ( String( workflow.states[ key ].id ) === String( id ) ) {
+                    return workflow.states[ key ];
+                }
+            }
+            return null;
+        }
 
-function fillSelect( select, subjson) {  
-  select.find('option').remove().end();
-  for (var key in subjson) {
-     addSelectOption( select, subjson[key].id, subjson[key].name);
-  }
-}
+        workflowSelect.addEventListener( 'change', function( ) {
+            const workflow = findWorkflow( workflowSelect.value );
+            fillSelect( stateSelect, workflow === null ? [] : workflow.states );
+            stateSelect.dispatchEvent( new Event( 'change' ) );
+        } );
 
+        stateSelect.addEventListener( 'change', function( ) {
+            const state = findState( findWorkflow( workflowSelect.value ), stateSelect.value );
+            fillSelect( actionSelect, state === null ? [] : state.actions );
+        } );
 
-json= ${json_workflow_actions!}
+        fillSelect( workflowSelect, json.workflows );
+        workflowSelect.dispatchEvent( new Event( 'change' ) );
+
+        selectIfPresent( workflowSelect, '${workflow_id?c}' );
+        workflowSelect.dispatchEvent( new Event( 'change' ) );
+        selectIfPresent( stateSelect, '${state_id?c}' );
+        stateSelect.dispatchEvent( new Event( 'change' ) );
+        selectIfPresent( actionSelect, '${action_id?c}' );
+    }
+
+    if ( document.readyState === 'loading' ) {
+        document.addEventListener( 'DOMContentLoaded', init );
+    } else {
+        init( );
+    }
+
+} )( );
 
 </script>
