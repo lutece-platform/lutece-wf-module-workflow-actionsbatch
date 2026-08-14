@@ -1,3 +1,6 @@
+-- liquibase formatted sql
+-- changeset workflow-actionsbatch:create_db_workflow_actionsbatch.sql
+-- preconditions onFail:MARK_RAN onError:WARN
 
 DROP TABLE IF EXISTS workflow_task_actions_batch_cf;
 CREATE TABLE workflow_task_actions_batch_cf (
