@@ -23,10 +23,12 @@
             	<p>First associate the task to an action.</p>
                 <p>In the task configuration page, choose the target workflow, the state of the resources of the target workflow that will be selected, the resource type, and the action to process.</p>
             	<p> If you set the external parent Id to the child resources, thoses resources can be filtered with, activating  the actionsbatch.filterWithExternalParentId property.</p>
+            	<p></p>
             </subsection>
             <subsection name="Usage">
                 <p>Lauch the action in the main workflow, and the batch of actions will be executed asynchonously. </p>
                 <p>WARNING : this could launch a huge amount of actions ! And it's running as a background  asynchronous task.</p>
+                <p>Use the workflow-actionsbatch.pause.ms property to delay the batch execution.</p>
                 <p> </p>
                 <p>The progress bar feature can be used to show the execution progress. In your code, initialize a progress bar feed token to follow the progress of the batch execution.</p>
                 <p>The feed token must be generated before, and set in session, with a name like : </p>
